@@ -1,0 +1,1860 @@
+@{
+    ViewData["Title"] = "Cash Flow Statement";
+    Layout = "_Layout";
+    var isAuditor = User.IsInRole("Auditor") && !User.IsInRole("Administrator") && !User.IsInRole("TreasuryManager");
+    var canEdit = User.IsInRole("Administrator") || User.IsInRole("TreasuryManager") || User.IsInRole("TreasuryExecutive");
+    var canViewAudit = User.IsInRole("Administrator") || User.IsInRole("TreasuryManager") || User.IsInRole("Auditor");
+}
+
+<style>
+/* ================================================================
+   CASHFLOW PAGE — LIGHT BRIGHT FUTURISTIC REDESIGN
+   Luminous Frosted Glass · High-Tech Neon Accents · Crisp Geometry
+   ================================================================ */
+
+.cashflow-page {
+    width: 100%;
+    min-height: 100vh;
+    box-sizing: border-box;
+    padding: 8px 0 24px;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 13px;
+    color: #0f172a;
+}
+
+.cashflow-page *, .cashflow-page *::before, .cashflow-page *::after {
+    box-sizing: border-box;
+}
+
+.cashflow-shell {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+}
+
+/* ================================================================
+   PAGE BANNER
+   ================================================================ */
+
+.cf-page-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 22px 26px;
+    margin-bottom: 16px;
+    border: 1px solid rgba(226, 232, 240, 0.95);
+    border-radius: 18px;
+    background: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.95) 0%,
+        rgba(248, 250, 252, 0.98) 100%
+    );
+    backdrop-filter: blur(20px);
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 1) inset,
+        0 10px 30px rgba(15, 23, 42, 0.05),
+        0 0 0 1px rgba(99, 102, 241, 0.08);
+    position: relative;
+    overflow: hidden;
+}
+
+.cf-page-banner::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        #e11d48 30%,
+        #0284c7 70%,
+        transparent 100%
+    );
+}
+
+.cf-page-banner::after {
+    content: '';
+    position: absolute;
+    top: -50%; right: -10%;
+    width: 320px; height: 320px;
+    background: radial-gradient(circle, rgba(225, 29, 72, 0.06) 0%, rgba(2, 132, 199, 0.04) 50%, transparent 70%);
+    pointer-events: none;
+}
+
+.banner-title h1 {
+    margin: 0;
+    font-size: clamp(18px, 2vw, 26px);
+    font-weight: 900;
+    letter-spacing: -0.6px;
+    line-height: 1.2;
+    background: linear-gradient(135deg, #0f172a 0%, #e11d48 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.banner-title p {
+    margin: 6px 0 0;
+    color: #64748b;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+.banner-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+    z-index: 1;
+}
+
+.banner-fy {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: #e11d48;
+    letter-spacing: 1px;
+    text-shadow: 0 0 10px rgba(225, 29, 72, 0.2);
+}
+
+.banner-unit {
+    font-size: 10px;
+    color: #64748b;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+/* ================================================================
+   FILTER CARD & TOOLBAR
+   ================================================================ */
+
+.filter-card {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 0 0 16px;
+    padding: 18px 20px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(226, 232, 240, 0.95);
+    border-radius: 16px;
+    backdrop-filter: blur(16px);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.date-field,
+.value-type-field {
+    display: flex;
+    flex: 1 1 140px;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.date-field label,
+.value-type-field label {
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+}
+
+.date-field input,
+.value-type-field select {
+    width: 100%;
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid rgba(203, 213, 225, 0.9);
+    border-radius: 10px;
+    background: #ffffff;
+    color: #0f172a;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    -webkit-appearance: none;
+    appearance: none;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+
+.date-field input:focus,
+.value-type-field select:focus {
+    outline: none;
+    border-color: #e11d48;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.12), 0 2px 8px rgba(225, 29, 72, 0.08);
+}
+
+.date-field input::-webkit-calendar-picker-indicator {
+    filter: none;
+    cursor: pointer;
+    opacity: 0.65;
+}
+
+.value-type-field select option {
+    background: #ffffff;
+    color: #0f172a;
+}
+
+.btn-primary {
+    flex: 0 0 auto;
+    min-height: 40px;
+    padding: 0 20px;
+    border: 1px solid rgba(225, 29, 72, 0.4);
+    border-radius: 10px;
+    background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 14px rgba(225, 29, 72, 0.25);
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(225, 29, 72, 0.35);
+}
+
+.btn-primary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-success {
+    flex: 0 0 auto;
+    min-height: 40px;
+    padding: 0 22px;
+    border: 1px solid rgba(5, 150, 105, 0.4);
+    border-radius: 10px;
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-success:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(5, 150, 105, 0.35);
+}
+
+.btn-success:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-secondary {
+    flex: 0 0 auto;
+    min-height: 40px;
+    padding: 0 18px;
+    border: 1px solid rgba(203, 213, 225, 0.9);
+    border-radius: 10px;
+    background: #ffffff;
+    color: #334155;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.btn-secondary:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+    color: #0f172a;
+}
+
+.pending-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+/* ================================================================
+   STATUS MESSAGE
+   ================================================================ */
+
+.status-message {
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 500;
+    display: none;
+    align-items: center;
+    gap: 10px;
+}
+
+.status-message.visible {
+    display: flex;
+}
+
+.status-message.info {
+    background: rgba(2, 132, 199, 0.08);
+    border: 1px solid rgba(2, 132, 199, 0.3);
+    color: #0369a1;
+}
+
+.status-message.success {
+    background: rgba(5, 150, 105, 0.08);
+    border: 1px solid rgba(5, 150, 105, 0.3);
+    color: #047857;
+}
+
+.status-message.error {
+    background: rgba(225, 29, 72, 0.08);
+    border: 1px solid rgba(225, 29, 72, 0.3);
+    color: #be123c;
+}
+
+/* ================================================================
+   SUMMARY CARDS
+   ================================================================ */
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin: 0 0 20px;
+}
+
+.summary-card {
+    min-width: 0;
+    padding: 20px 20px 18px;
+    border-radius: 16px;
+    border: 1px solid rgba(226, 232, 240, 0.95);
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.04);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s;
+    cursor: default;
+}
+
+.summary-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
+}
+
+.summary-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 16px 16px 0 0;
+}
+
+.opening-card::before { background: linear-gradient(90deg, #0284c7, transparent); }
+.receipts-card::before { background: linear-gradient(90deg, #059669, transparent); }
+.payments-card::before { background: linear-gradient(90deg, #e11d48, transparent); }
+.closing-card::before { background: linear-gradient(90deg, #7c3aed, transparent); }
+
+.summary-icon {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    margin: 0 0 14px;
+    border-radius: 10px;
+    font-size: 15px;
+}
+
+.opening-card .summary-icon  { background: rgba(2, 132, 199, 0.1);  color: #0284c7; }
+.receipts-card .summary-icon { background: rgba(5, 150, 105, 0.1);  color: #059669; }
+.payments-card .summary-icon { background: rgba(225, 29, 72, 0.1);  color: #e11d48; }
+.closing-card .summary-icon  { background: rgba(124, 58, 237, 0.1); color: #7c3aed; }
+
+.summary-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #64748b;
+    margin: 0 0 6px;
+}
+
+.summary-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #0f172a;
+    font-variant-numeric: tabular-nums;
+    margin: 0 0 6px;
+}
+
+.summary-note {
+    font-size: 10px;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+/* ================================================================
+   STATEMENT SECTIONS & TABLES
+   ================================================================ */
+
+.statement-section {
+    margin-bottom: 24px;
+    background: #ffffff;
+    border: 1px solid rgba(226, 232, 240, 0.95);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.03);
+}
+
+.section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: #f8fafc;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.section-heading h2 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    color: #0f172a;
+}
+
+.section-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 3px 10px;
+    border-radius: 40px;
+}
+
+[data-section="inflow"]   .section-badge { background: rgba(5, 150, 105, 0.1);  color: #059669;  border: 1px solid rgba(5, 150, 105, 0.25);  }
+[data-section="outflow"]  .section-badge { background: rgba(225, 29, 72, 0.1);  color: #e11d48;  border: 1px solid rgba(225, 29, 72, 0.25);  }
+[data-section="borrowing"].section-badge { background: rgba(2, 132, 199, 0.1);  color: #0284c7;  border: 1px solid rgba(2, 132, 199, 0.25);  }
+
+.table-scroll {
+    width: 100%;
+    max-width: 100%;
+    max-height: 58vh;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(225, 29, 72, 0.3) transparent;
+}
+
+.table-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+.table-scroll::-webkit-scrollbar-track { background: transparent; }
+.table-scroll::-webkit-scrollbar-thumb { background: rgba(225, 29, 72, 0.3); border-radius: 3px; }
+
+.statement-table {
+    width: max-content;
+    min-width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    color: #334155;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.statement-table th,
+.statement-table td {
+    min-width: 90px;
+    padding: 10px 13px;
+    border-right: 1px solid rgba(226, 232, 240, 0.8);
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+    text-align: right;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.statement-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    border-bottom: 2px solid rgba(203, 213, 225, 0.9);
+    backdrop-filter: blur(8px);
+}
+
+.statement-table .category-column {
+    width: 220px;
+    min-width: 220px;
+    max-width: 220px;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.statement-table th:nth-child(1),
+.statement-table th:nth-child(2),
+.statement-table td:nth-child(1),
+.statement-table td:nth-child(2) {
+    min-width: 100px;
+}
+
+.statement-table .amount-cell {
+    font-variant-numeric: tabular-nums;
+    color: #334155;
+    font-weight: 500;
+}
+
+.statement-table tbody tr:hover td {
+    background: rgba(99, 102, 241, 0.04);
+}
+
+.statement-table .total-row td {
+    background: #f8fafc;
+    font-weight: 700;
+    color: #0f172a;
+    border-top: 2px solid rgba(203, 213, 225, 0.95);
+    border-bottom: 2px solid rgba(203, 213, 225, 0.95);
+}
+
+.statement-table .total-row .category-column {
+    background: #f8fafc;
+    color: #0f172a;
+    font-weight: 700;
+}
+
+.statement-table .empty-cell {
+    padding: 28px;
+    color: #64748b;
+    text-align: left;
+    white-space: normal;
+    font-family: 'Inter', sans-serif;
+    font-style: italic;
+}
+
+/* ================================================================
+   CELL EDITING & DIRTY TRACKING
+   ================================================================ */
+
+.statement-table .daily-cell {
+    cursor: default;
+    position: relative;
+    transition: background 0.15s ease;
+}
+
+.statement-table .daily-cell.editable-cell {
+    cursor: pointer;
+}
+
+.statement-table .daily-cell.editable-cell:hover {
+    background: rgba(225, 29, 72, 0.08) !important;
+}
+
+.statement-table .daily-cell.dirty-cell {
+    background: rgba(245, 158, 11, 0.12) !important;
+    font-weight: 700;
+    color: #b45309;
+}
+
+.statement-table .daily-cell.dirty-cell::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #f59e0b;
+    box-shadow: 0 0 6px rgba(245, 158, 11, 0.5);
+}
+
+.statement-table .daily-edit-input {
+    display: block;
+    width: 95px;
+    min-width: 0;
+    margin: -4px 0 -4px auto;
+    padding: 5px 8px;
+    border: 1px solid #e11d48;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #0f172a;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    appearance: none;
+    box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.15);
+}
+
+.statement-table .daily-edit-input:focus {
+    outline: none;
+    border-color: #be123c;
+    box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.25);
+}
+
+/* ================================================================
+   MODAL DIALOGS (SAVE & AUDIT HISTORY)
+   ================================================================ */
+
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.modal-backdrop.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-card {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+    width: 100%;
+    max-width: 580px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transform: scale(0.95);
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-card.modal-large {
+    max-width: 1050px;
+}
+
+.modal-backdrop.active .modal-card {
+    transform: scale(1);
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-close-btn {
+    border: none;
+    background: transparent;
+    font-size: 18px;
+    color: #64748b;
+    cursor: pointer;
+    padding: 4px;
+}
+
+.modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    font-size: 13px;
+}
+
+.modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #475569;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    color: #0f172a;
+    background: #ffffff;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #059669;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+}
+
+.batch-preview-list {
+    max-height: 180px;
+    overflow-y: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #f8fafc;
+    padding: 10px;
+    margin-bottom: 16px;
+}
+
+.batch-preview-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 8px;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 12px;
+}
+
+.batch-preview-item:last-child {
+    border-bottom: none;
+}
+
+.audit-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 14px;
+    background: #f8fafc;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+}
+
+.audit-filter-bar input,
+.audit-filter-bar select {
+    padding: 6px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 12px;
+}
+
+.audit-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+}
+
+.audit-table th,
+.audit-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+}
+
+.audit-table th {
+    background: #f1f5f9;
+    font-weight: 700;
+    color: #475569;
+    position: sticky;
+    top: 0;
+}
+
+.audit-table .num {
+    text-align: right;
+    font-family: 'JetBrains Mono', monospace;
+}
+</style>
+
+<div class="cashflow-page" data-can-edit="@canEdit.ToString().ToLower()" data-is-auditor="@isAuditor.ToString().ToLower()">
+<div class="cashflow-shell">
+
+    <!-- Page Banner -->
+    <header class="cf-page-banner">
+        <div class="banner-title">
+            <h1>Cash Flow Statement</h1>
+            <p>Daily liquidity position &middot; receipts &middot; payments &middot; borrowing position</p>
+        </div>
+        <div class="banner-meta">
+            <span class="banner-fy">FY 2026–27</span>
+            <span class="banner-unit">Amounts in ₹ crore</span>
+        </div>
+    </header>
+
+    <!-- Filter Controls & Actions -->
+    <section class="filter-card" aria-label="Date range filters">
+        <div class="date-field">
+            <label for="fromDate">From date</label>
+            <input type="date"
+                   id="fromDate"
+                   value="2026-10-02"
+                   min="2026-04-01"
+                   max="2027-03-31" />
+        </div>
+
+        <div class="date-field">
+            <label for="toDate">To date</label>
+            <input type="date"
+                   id="toDate"
+                   value="2026-10-07"
+                   min="2026-04-01"
+                   max="2027-03-31" />
+        </div>
+
+        <label class="value-type-field" for="valueType">
+            Value type
+            <select id="valueType">
+                <option value="Actual">Actual</option>
+                <option value="Projected">Projected</option>
+            </select>
+        </label>
+
+        <button type="button" id="loadStatementBtn" class="btn-primary">
+            <i class="fa-solid fa-bolt" style="margin-right:6px;"></i>Load Statement
+        </button>
+
+        @if (canEdit)
+        {
+            <button type="button" id="saveChangesBtn" class="btn-success" disabled>
+                <i class="fa-solid fa-floppy-disk"></i>
+                Save Changes
+                <span id="pendingChangesCount" class="pending-badge">0</span>
+            </button>
+        }
+
+        @if (canViewAudit)
+        {
+            <button type="button" id="viewAuditHistoryBtn" class="btn-secondary">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                Audit History
+            </button>
+        }
+    </section>
+
+    <!-- Status Message -->
+    <div id="statusMessage"
+         class="status-message"
+         role="status"
+         aria-live="polite"></div>
+
+    <!-- Summary Cards -->
+    <section class="summary-grid" aria-label="Financial summary">
+        <article class="summary-card opening-card">
+            <div class="summary-icon"><i class="fa-solid fa-wallet"></i></div>
+            <div class="summary-label">Opening Balance</div>
+            <div class="summary-value" id="openingBalance">—</div>
+            <div class="summary-note">Balance at selected date</div>
+        </article>
+
+        <article class="summary-card receipts-card">
+            <div class="summary-icon"><i class="fa-solid fa-arrow-trend-up"></i></div>
+            <div class="summary-label">Receipts</div>
+            <div class="summary-value" id="receiptsAmount">—</div>
+            <div class="summary-note">Selected value type</div>
+        </article>
+
+        <article class="summary-card payments-card">
+            <div class="summary-icon"><i class="fa-solid fa-arrow-trend-down"></i></div>
+            <div class="summary-label">Payments</div>
+            <div class="summary-value" id="paymentsAmount">—</div>
+            <div class="summary-note">Selected value type</div>
+        </article>
+
+        <article class="summary-card closing-card">
+            <div class="summary-icon"><i class="fa-solid fa-vault"></i></div>
+            <div class="summary-label">Closing Balance</div>
+            <div class="summary-value" id="closingBalance">—</div>
+            <div class="summary-note">As calculated by cash flow balance rules</div>
+        </article>
+    </section>
+
+    <!-- Statement Tables -->
+    <main id="statementSections" aria-label="Cash flow statement sections">
+        <section class="statement-section" data-section="inflow">
+            <div class="section-heading">
+                <h2><i class="fa-solid fa-circle-arrow-down" style="color:#059669;margin-right:8px;font-size:12px;"></i>Cash Inflow</h2>
+                <span class="section-badge">RECEIPTS</span>
+            </div>
+            <div class="table-scroll">
+                <table class="statement-table">
+                    <thead></thead>
+                    <tbody>
+                        <tr><td class="empty-cell" colspan="10">Loading data…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="statement-section" data-section="outflow">
+            <div class="section-heading">
+                <h2><i class="fa-solid fa-circle-arrow-up" style="color:#e11d48;margin-right:8px;font-size:12px;"></i>Cash Outflow</h2>
+                <span class="section-badge">PAYMENTS</span>
+            </div>
+            <div class="table-scroll">
+                <table class="statement-table">
+                    <thead></thead>
+                    <tbody>
+                        <tr><td class="empty-cell" colspan="10">Loading data…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="statement-section" data-section="borrowing">
+            <div class="section-heading">
+                <h2><i class="fa-solid fa-landmark" style="color:#0284c7;margin-right:8px;font-size:12px;"></i>Cash Credit &amp; Borrowings</h2>
+                <span class="section-badge">FINANCE</span>
+            </div>
+            <div class="table-scroll">
+                <table class="statement-table">
+                    <thead></thead>
+                    <tbody>
+                        <tr><td class="empty-cell" colspan="10">Loading data…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+</div>
+</div>
+
+<!-- ================================================================
+     SAVE CONFIRMATION MODAL
+     ================================================================ -->
+<div id="saveModal" class="modal-backdrop">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-floppy-disk" style="color:#059669;"></i> Commit Cash Flow Changes</h3>
+            <button type="button" class="modal-close-btn" id="cancelSaveBtn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="margin-top:0;color:#64748b;">
+                You are committing <strong id="modalPendingCount" style="color:#0f172a;">0</strong> cell change(s) in an atomic batch.
+            </p>
+            <div class="batch-preview-list" id="batchPreviewList"></div>
+
+            <div class="form-group">
+                <label for="savePrNumber">PR Number (Mandatory) *</label>
+                <input type="text" id="savePrNumber" placeholder="e.g. PR-2026-10-0042" required autocomplete="off" />
+            </div>
+
+            <div class="form-group">
+                <label for="saveRemark">Remark / Justification (Mandatory) *</label>
+                <textarea id="saveRemark" rows="3" placeholder="Provide reason for this financial modification..." required></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" id="closeSaveModalBtn">Cancel</button>
+            <button type="button" class="btn-success" id="confirmSaveBtn">
+                <i class="fa-solid fa-check"></i> Confirm &amp; Save Batch
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================
+     AUDIT HISTORY MODAL
+     ================================================================ -->
+<div id="auditModal" class="modal-backdrop">
+    <div class="modal-card modal-large">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-clock-rotate-left" style="color:#0284c7;"></i> Cash Flow Audit History</h3>
+            <button type="button" class="modal-close-btn" id="closeAuditModalBtn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="audit-filter-bar">
+                <input type="text" id="auditFilterPr" placeholder="Filter by PR Number" style="width:180px;" />
+                <input type="date" id="auditFilterFrom" title="From Date" />
+                <input type="date" id="auditFilterTo" title="To Date" />
+                <select id="auditFilterValueType">
+                    <option value="">All Value Types</option>
+                    <option value="Actual">Actual</option>
+                    <option value="Projected">Projected</option>
+                </select>
+                <button type="button" class="btn-primary" id="applyAuditFilterBtn" style="padding:0 14px;height:34px;">
+                    Search
+                </button>
+            </div>
+
+            <div style="max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <table class="audit-table">
+                    <thead>
+                        <tr>
+                            <th>UTC Timestamp</th>
+                            <th>PR Number</th>
+                            <th>Category</th>
+                            <th>Entry Date</th>
+                            <th>Type</th>
+                            <th class="num">Old Value</th>
+                            <th class="num">New Value</th>
+                            <th>User</th>
+                            <th>Remark</th>
+                        </tr>
+                    </thead>
+                    <tbody id="auditTableBody">
+                        <tr><td colspan="9" style="text-align:center;padding:20px;color:#64748b;">Loading audit entries…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:12px;color:#64748b;">
+                <span id="auditPageInfo">Showing 0 entries</span>
+                <div style="display:flex;gap:6px;">
+                    <button type="button" id="auditPrevPageBtn" class="btn-secondary" style="padding:0 10px;height:30px;" disabled>&larr; Prev</button>
+                    <button type="button" id="auditNextPageBtn" class="btn-secondary" style="padding:0 10px;height:30px;" disabled>Next &rarr;</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(() => {
+    "use strict";
+
+    // =========================================================
+    // CONFIGURATION AND DOM REFS
+    // =========================================================
+    const financialYearId = 1;
+    const fyStartDate     = "2026-04-01";
+    const fyEndDate       = "2027-03-31";
+
+    const pageContainer       = document.querySelector(".cashflow-page");
+    const canEdit             = pageContainer.dataset.canEdit === "true";
+    const isAuditor           = pageContainer.dataset.isAuditor === "true";
+
+    const fromInput           = document.getElementById("fromDate");
+    const toInput             = document.getElementById("toDate");
+    const valueTypeInput      = document.getElementById("valueType");
+    const loadButton          = document.getElementById("loadStatementBtn");
+    const saveButton          = document.getElementById("saveChangesBtn");
+    const pendingBadge        = document.getElementById("pendingChangesCount");
+    const viewAuditBtn        = document.getElementById("viewAuditHistoryBtn");
+    const statusMessage       = document.getElementById("statusMessage");
+
+    // Modal elements
+    const saveModal           = document.getElementById("saveModal");
+    const cancelSaveBtn       = document.getElementById("cancelSaveBtn");
+    const closeSaveModalBtn   = document.getElementById("closeSaveModalBtn");
+    const confirmSaveBtn      = document.getElementById("confirmSaveBtn");
+    const modalPendingCount   = document.getElementById("modalPendingCount");
+    const batchPreviewList    = document.getElementById("batchPreviewList");
+    const savePrNumberInput   = document.getElementById("savePrNumber");
+    const saveRemarkInput     = document.getElementById("saveRemark");
+
+    const auditModal          = document.getElementById("auditModal");
+    const closeAuditModalBtn  = document.getElementById("closeAuditModalBtn");
+    const auditTableBody      = document.getElementById("auditTableBody");
+    const applyAuditFilterBtn = document.getElementById("applyAuditFilterBtn");
+    const auditPrevPageBtn    = document.getElementById("auditPrevPageBtn");
+    const auditNextPageBtn    = document.getElementById("auditNextPageBtn");
+    const auditPageInfo       = document.getElementById("auditPageInfo");
+    const auditFilterPr       = document.getElementById("auditFilterPr");
+    const auditFilterFrom     = document.getElementById("auditFilterFrom");
+    const auditFilterTo       = document.getElementById("auditFilterTo");
+    const auditFilterType     = document.getElementById("auditFilterValueType");
+
+    let auditCurrentPage      = 1;
+    let auditPageSize         = 20;
+
+    // Sections
+    const statementSections = [
+        { key: "inflow",    match: /inflow|cash\s*in/i },
+        { key: "outflow",   match: /outflow|cash\s*out/i },
+        { key: "borrowing", match: /borrow|loan|credit|commercial|short.term|rupee|finance/i }
+    ];
+
+    // =========================================================
+    // STATE: PENDING EDITS & LIVE DATA
+    // Key: `${categoryId}_${date}_${valueType}`
+    // =========================================================
+    const pendingChanges = new Map();
+
+    // Cache of loaded data
+    let currentActualRows    = [];
+    let currentProjectedRows = [];
+    let currentDates         = [];
+    let currentSummaryBase   = null;
+
+    // =========================================================
+    // HELPERS
+    // =========================================================
+    function field(row, name) {
+        if (!row) return null;
+        const key = Object.keys(row).find(k => k.toLowerCase() === name.toLowerCase());
+        return key === undefined ? null : row[key];
+    }
+
+    function amount(value) {
+        if (value === null || value === undefined || value === "") return "—";
+        const number = Number(value);
+        return Number.isFinite(number)
+            ? number.toLocaleString("en-IN", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })
+            : "—";
+    }
+
+    function datesBetween(from, to) {
+        const dates = [];
+        const current = new Date(`${from}T00:00:00`);
+        const end     = new Date(`${to}T00:00:00`);
+        while (current <= end) {
+            dates.push([
+                current.getFullYear(),
+                String(current.getMonth() + 1).padStart(2, "0"),
+                String(current.getDate()).padStart(2, "0")
+            ].join("-"));
+            current.setDate(current.getDate() + 1);
+        }
+        return dates;
+    }
+
+    async function getJson(url) {
+        const response = await fetch(url);
+        if (!response.ok) {
+            const err = await response.text();
+            throw new Error(`API ${response.status}: ${err}`);
+        }
+        return response.json();
+    }
+
+    function setStatus(message, type = "info") {
+        if (!message) {
+            statusMessage.style.display = "none";
+            statusMessage.className = "status-message";
+            return;
+        }
+        statusMessage.textContent = message;
+        statusMessage.className = `status-message visible ${type}`;
+    }
+
+    function isFormulaOrTotalCategory(cat) {
+        const type = (cat.rowType || "").toLowerCase();
+        const name = (cat.name || "").toLowerCase();
+        return type.includes("total") || type.includes("subtotal") || type.includes("ratio") ||
+               name.includes("total") || name.includes("subtotal");
+    }
+
+    // =========================================================
+    // DATA EXTRACTION & AGGREGATION
+    // =========================================================
+    function belongsToSection(row, section) {
+        return section.match.test(String(field(row, "sectionName") ?? ""));
+    }
+
+    function getCategoryGroups(actualRows, projectedRows, section) {
+        const groups = new Map();
+
+        function addRows(rows, valueType) {
+            for (const row of rows) {
+                if (!belongsToSection(row, section)) continue;
+
+                const id        = String(field(row, "categoryId"));
+                const entryDate = String(field(row, "entryDate") ?? "").slice(0, 10);
+                const rowVer    = field(row, "rowVersion");
+
+                if (!groups.has(id)) {
+                    groups.set(id, {
+                        id:        Number(id),
+                        name:      String(field(row, "categoryName") ?? "Unnamed category"),
+                        order:     Number(field(row, "displayOrder") ?? 0),
+                        rowType:   String(field(row, "rowType") ?? ""),
+                        section:   String(field(row, "sectionName") ?? ""),
+                        actual:    new Map(),
+                        projected: new Map(),
+                        actualRowVer:    new Map(),
+                        projectedRowVer: new Map()
+                    });
+                }
+
+                const cat = groups.get(id);
+                if (entryDate) {
+                    const targetMap = valueType === "Actual" ? cat.actual : cat.projected;
+                    const verMap    = valueType === "Actual" ? cat.actualRowVer : cat.projectedRowVer;
+                    targetMap.set(entryDate, field(row, "amount"));
+                    if (rowVer) verMap.set(entryDate, rowVer);
+                }
+            }
+        }
+
+        addRows(actualRows,    "Actual");
+        addRows(projectedRows, "Projected");
+
+        return [...groups.values()].sort(
+            (a, b) => a.order - b.order || a.name.localeCompare(b.name)
+        );
+    }
+
+    function getEffectiveAmount(catId, date, valueType, originalValue) {
+        const key = `${catId}_${date}_${valueType}`;
+        if (pendingChanges.has(key)) {
+            return pendingChanges.get(key).newAmount;
+        }
+        return originalValue;
+    }
+
+    // =========================================================
+    // RENDERING
+    // =========================================================
+    function renderSection(section, actualRows, projectedRows, dates) {
+        const container = document.querySelector(`[data-section="${section.key}"]`);
+        if (!container) return;
+
+        const table = container.querySelector("table");
+        const head  = table.querySelector("thead");
+        const body  = table.querySelector("tbody");
+
+        head.replaceChildren();
+        body.replaceChildren();
+
+        const selectedType = valueTypeInput.value;
+        const headerRow = document.createElement("tr");
+
+        const thProj = document.createElement("th"); thProj.textContent = "Projected"; thProj.scope = "col";
+        const thAct  = document.createElement("th"); thAct.textContent = "Actual"; thAct.scope = "col";
+        const thCat  = document.createElement("th"); thCat.textContent = "Category"; thCat.className = "category-column"; thCat.scope = "col";
+
+        headerRow.appendChild(thProj);
+        headerRow.appendChild(thAct);
+        headerRow.appendChild(thCat);
+
+        for (const date of dates) {
+            const th = document.createElement("th");
+            const parsed = new Date(`${date}T00:00:00`);
+            th.textContent = parsed.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+            th.scope = "col";
+            th.dataset.date = date;
+            headerRow.appendChild(th);
+        }
+        head.appendChild(headerRow);
+
+        const categories = getCategoryGroups(actualRows, projectedRows, section);
+
+        if (categories.length === 0) {
+            const row = document.createElement("tr");
+            const emptyCell = document.createElement("td");
+            emptyCell.className = "empty-cell";
+            emptyCell.colSpan = dates.length + 3;
+            emptyCell.textContent = "No records for this section.";
+            row.appendChild(emptyCell);
+            body.appendChild(row);
+            return;
+        }
+
+        for (const cat of categories) {
+            const row = document.createElement("tr");
+            const isTotal = isFormulaOrTotalCategory(cat);
+            if (isTotal) row.classList.add("total-row");
+
+            row.dataset.categoryId = cat.id;
+            row.dataset.rowType = cat.rowType;
+            row.dataset.section = section.key;
+
+            // Column 1: Sum Projected
+            const tdProj = document.createElement("td");
+            tdProj.className = "amount-cell";
+            tdProj.textContent = amount(calculateCategorySum(cat, "Projected", dates));
+            tdProj.dataset.colType = "projected-total";
+            row.appendChild(tdProj);
+
+            // Column 2: Sum Actual
+            const tdAct = document.createElement("td");
+            tdAct.className = "amount-cell";
+            tdAct.textContent = amount(calculateCategorySum(cat, "Actual", dates));
+            tdAct.dataset.colType = "actual-total";
+            row.appendChild(tdAct);
+
+            // Column 3: Category Label
+            const tdName = document.createElement("td");
+            tdName.className = "category-column";
+            tdName.textContent = cat.name;
+            row.appendChild(tdName);
+
+            // Date Columns
+            for (const date of dates) {
+                const td = document.createElement("td");
+                td.className = "amount-cell daily-cell";
+                td.dataset.date = date;
+                td.dataset.categoryId = cat.id;
+                td.dataset.categoryName = cat.name;
+
+                const originalVal = (selectedType === "Projected" ? cat.projected : cat.actual).get(date) ?? null;
+                const effectiveVal = getEffectiveAmount(cat.id, date, selectedType, originalVal);
+
+                td.dataset.originalValue = originalVal === null ? "" : String(originalVal);
+                td.textContent = amount(effectiveVal);
+
+                const pendingKey = `${cat.id}_${date}_${selectedType}`;
+                if (pendingChanges.has(pendingKey)) {
+                    td.classList.add("dirty-cell");
+                }
+
+                const rowVerMap = selectedType === "Projected" ? cat.projectedRowVer : cat.actualRowVer;
+                const rowVer = rowVerMap.get(date) ?? null;
+                if (rowVer) td.dataset.rowVersion = rowVer;
+
+                if (!isTotal && canEdit && !isAuditor) {
+                    td.classList.add("editable-cell");
+                    td.title = "Click to edit";
+                }
+
+                row.appendChild(td);
+            }
+
+            body.appendChild(row);
+        }
+    }
+
+    function calculateCategorySum(cat, valueType, dates) {
+        let sum = 0;
+        let hasVal = false;
+        const baseMap = valueType === "Projected" ? cat.projected : cat.actual;
+
+        for (const date of dates) {
+            const orig = baseMap.get(date) ?? null;
+            const val = getEffectiveAmount(cat.id, date, valueType, orig);
+            if (val !== null && val !== undefined && val !== "") {
+                const n = Number(val);
+                if (Number.isFinite(n)) { sum += n; hasVal = true; }
+            }
+        }
+        return hasVal ? sum : null;
+    }
+
+    // =========================================================
+    // LIVE RECALCULATION ENGINE
+    // =========================================================
+    function recalculateLiveGrid() {
+        const selectedType = valueTypeInput.value;
+
+        // 1. Recalculate each section's Detail row totals & Section totals (Inflow Cat 42, Outflow Cat 70)
+        for (const date of currentDates) {
+            let inflowTotal = 0;
+            let outflowTotal = 0;
+
+            document.querySelectorAll(`.statement-table tr:not(.total-row)`).forEach(tr => {
+                const catId = Number(tr.dataset.categoryId);
+                const section = tr.dataset.section;
+                const cell = tr.querySelector(`td.daily-cell[data-date="${date}"]`);
+                if (!cell) return;
+
+                const orig = cell.dataset.originalValue === "" ? null : Number(cell.dataset.originalValue);
+                const eff = getEffectiveAmount(catId, date, selectedType, orig);
+                const val = eff !== null && eff !== "" ? Number(eff) : 0;
+
+                if (section === "inflow") inflowTotal += val;
+                if (section === "outflow") outflowTotal += val;
+            });
+
+            // Update Total rows
+            const inflowTotalCell = document.querySelector(`[data-section="inflow"] tr.total-row td.daily-cell[data-date="${date}"]`);
+            if (inflowTotalCell) inflowTotalCell.textContent = amount(inflowTotal);
+
+            const outflowTotalCell = document.querySelector(`[data-section="outflow"] tr.total-row td.daily-cell[data-date="${date}"]`);
+            if (outflowTotalCell) outflowTotalCell.textContent = amount(outflowTotal);
+        }
+
+        // 2. Recalculate vertical row totals (Projected and Actual sums)
+        document.querySelectorAll(`.statement-table tbody tr`).forEach(tr => {
+            const isTotal = tr.classList.contains("total-row");
+            const catId = tr.dataset.categoryId;
+            if (!catId) return;
+
+            let rowSum = 0;
+            let hasVal = false;
+            tr.querySelectorAll(`td.daily-cell`).forEach(c => {
+                const txt = c.textContent.trim().replace(/,/g, "");
+                if (txt !== "—" && txt !== "") {
+                    const n = Number(txt);
+                    if (Number.isFinite(n)) { rowSum += n; hasVal = true; }
+                }
+            });
+
+            const totalCell = selectedType === "Actual"
+                ? tr.querySelector(`td[data-col-type="actual-total"]`)
+                : tr.querySelector(`td[data-col-type="projected-total"]`);
+
+            if (totalCell) {
+                totalCell.textContent = hasVal ? amount(rowSum) : "—";
+            }
+        });
+
+        // 3. Recalculate Summary Cards (Opening, Receipts, Payments, Closing)
+        recalculateSummaryCards();
+    }
+
+    function recalculateSummaryCards() {
+        if (!currentSummaryBase) return;
+
+        const toDate = toInput.value;
+        const selectedType = valueTypeInput.value;
+
+        // Base values from server summary
+        let opening = Number(field(currentSummaryBase, "openingBalance") ?? 0);
+        let receipts = 0;
+        let payments = 0;
+
+        for (const date of currentDates) {
+            if (date > toDate) continue;
+
+            const inflowCell = document.querySelector(`[data-section="inflow"] tr.total-row td.daily-cell[data-date="${date}"]`);
+            if (inflowCell) {
+                const v = inflowCell.textContent.trim().replace(/,/g, "");
+                if (v !== "—" && v !== "") receipts += Number(v);
+            }
+
+            const outflowCell = document.querySelector(`[data-section="outflow"] tr.total-row td.daily-cell[data-date="${date}"]`);
+            if (outflowCell) {
+                const v = outflowCell.textContent.trim().replace(/,/g, "");
+                if (v !== "—" && v !== "") payments += Number(v);
+            }
+        }
+
+        const closing = opening + receipts - payments;
+
+        document.getElementById("openingBalance").textContent = amount(opening);
+        document.getElementById("receiptsAmount").textContent = amount(receipts);
+        document.getElementById("paymentsAmount").textContent = amount(payments);
+        document.getElementById("closingBalance").textContent = amount(closing);
+    }
+
+    // =========================================================
+    // EDITING CELLS
+    // =========================================================
+    function startEditingCell(td) {
+        if (!canEdit || isAuditor) return;
+        if (td.querySelector("input")) return;
+
+        const catId    = Number(td.dataset.categoryId);
+        const catName  = td.dataset.categoryName;
+        const date     = td.dataset.date;
+        const origText = td.dataset.originalValue;
+        const currText = td.textContent.trim().replace(/,/g, "");
+        const curVal   = currText === "—" ? "" : currText;
+
+        // Confirmation dialog if editing an existing non-zero value on a past or historical date
+        if (origText && Number(origText) !== 0) {
+            const confirmed = window.confirm(
+                `Confirm edit: Do you wish to modify the existing financial entry for "${catName}" on ${date} (Current: ${origText} cr)?`
+            );
+            if (!confirmed) return;
+        }
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.inputMode = "decimal";
+        input.className = "daily-edit-input";
+        input.value = curVal;
+
+        td.textContent = "";
+        td.appendChild(input);
+        input.focus();
+        input.select();
+
+        function commitInput() {
+            const rawVal = input.value.trim();
+            let newVal = null;
+
+            if (rawVal !== "") {
+                const parsed = Number(rawVal);
+                if (isNaN(parsed) || parsed < 0) {
+                    alert("Please enter a valid non-negative number.");
+                    input.focus();
+                    return;
+                }
+                newVal = parsed;
+            }
+
+            const selectedType = valueTypeInput.value;
+            const key = `${catId}_${date}_${selectedType}`;
+            const origNum = origText === "" ? null : Number(origText);
+
+            if (newVal === origNum || (newVal === null && origNum === null)) {
+                pendingChanges.delete(key);
+                td.classList.remove("dirty-cell");
+            } else {
+                pendingChanges.set(key, {
+                    categoryId: catId,
+                    categoryName: catName,
+                    entryDate: date,
+                    valueType: selectedType,
+                    originalAmount: origNum,
+                    newAmount: newVal,
+                    rowVersion: td.dataset.rowVersion || null
+                });
+                td.classList.add("dirty-cell");
+            }
+
+            td.textContent = amount(newVal);
+            updatePendingBadge();
+            recalculateLiveGrid();
+        }
+
+        input.addEventListener("blur", commitInput);
+        input.addEventListener("keydown", e => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                input.blur();
+            } else if (e.key === "Escape") {
+                td.textContent = amount(curVal === "" ? null : Number(curVal));
+            }
+        });
+    }
+
+    function updatePendingBadge() {
+        const count = pendingChanges.size;
+        if (pendingBadge) pendingBadge.textContent = String(count);
+        if (saveButton) saveButton.disabled = count === 0;
+    }
+
+    // =========================================================
+    // EVENT LISTENERS: TABLE CLICKS
+    // =========================================================
+    document.addEventListener("click", event => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+
+        const cell = target.closest("td.daily-cell.editable-cell");
+        if (cell && !cell.querySelector("input")) {
+            startEditingCell(cell);
+        }
+    });
+
+    // =========================================================
+    // SAVE WORKSPACE BATCH
+    // =========================================================
+    if (saveButton) {
+        saveButton.addEventListener("click", () => {
+            if (pendingChanges.size === 0) return;
+
+            modalPendingCount.textContent = String(pendingChanges.size);
+            batchPreviewList.replaceChildren();
+
+            for (const item of pendingChanges.values()) {
+                const div = document.createElement("div");
+                div.className = "batch-preview-item";
+                div.innerHTML = `
+                    <div><strong>${item.categoryName}</strong> (${item.entryDate}) [${item.valueType}]</div>
+                    <div>${amount(item.originalAmount)} &rarr; <strong style="color:#059669;">${amount(item.newAmount)}</strong></div>
+                `;
+                batchPreviewList.appendChild(div);
+            }
+
+            savePrNumberInput.value = "";
+            saveRemarkInput.value = "";
+            saveModal.classList.add("active");
+        });
+    }
+
+    if (cancelSaveBtn) cancelSaveBtn.addEventListener("click", () => saveModal.classList.remove("active"));
+    if (closeSaveModalBtn) closeSaveModalBtn.addEventListener("click", () => saveModal.classList.remove("active"));
+
+    if (confirmSaveBtn) {
+        confirmSaveBtn.addEventListener("click", async () => {
+            const pr = savePrNumberInput.value.trim();
+            const remark = saveRemarkInput.value.trim();
+
+            if (!pr) {
+                alert("PR Number is mandatory.");
+                savePrNumberInput.focus();
+                return;
+            }
+            if (!remark) {
+                alert("Remark is mandatory.");
+                saveRemarkInput.focus();
+                return;
+            }
+
+            confirmSaveBtn.disabled = true;
+            confirmSaveBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Persisting...`;
+
+            const payload = {
+                financialYearId: financialYearId,
+                prNumber: pr,
+                remark: remark,
+                cells: Array.from(pendingChanges.values()).map(c => ({
+                    categoryId: c.categoryId,
+                    entryDate: c.entryDate,
+                    valueType: c.valueType,
+                    newAmount: c.newAmount,
+                    rowVersion: c.rowVersion
+                }))
+            };
+
+            try {
+                const response = await fetch("/api/cashflow/save", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    if (response.status === 409) {
+                        alert(`Concurrency conflict: ${result.error}\n\nPlease reload statement to inspect the latest values.`);
+                    } else {
+                        alert(`Save failed: ${result.error || response.statusText}`);
+                    }
+                    return;
+                }
+
+                saveModal.classList.remove("active");
+                pendingChanges.clear();
+                updatePendingBadge();
+                setStatus(`Saved batch successfully (${result.rowsModified} changes committed under PR: ${pr}).`, "success");
+
+                // Reload authoritative statement from SQL Server
+                await loadStatement();
+
+            } catch (err) {
+                console.error(err);
+                alert(`Network error saving batch: ${err.message}`);
+            } finally {
+                confirmSaveBtn.disabled = false;
+                confirmSaveBtn.innerHTML = `<i class="fa-solid fa-check"></i> Confirm &amp; Save Batch`;
+            }
+        });
+    }
+
+    // =========================================================
+    // AUDIT HISTORY DIALOG
+    // =========================================================
+    if (viewAuditBtn) {
+        viewAuditBtn.addEventListener("click", () => {
+            auditModal.classList.add("active");
+            auditCurrentPage = 1;
+            loadAuditHistory();
+        });
+    }
+
+    if (closeAuditModalBtn) {
+        closeAuditModalBtn.addEventListener("click", () => auditModal.classList.remove("active"));
+    }
+
+    if (applyAuditFilterBtn) {
+        applyAuditFilterBtn.addEventListener("click", () => {
+            auditCurrentPage = 1;
+            loadAuditHistory();
+        });
+    }
+
+    if (auditPrevPageBtn) {
+        auditPrevPageBtn.addEventListener("click", () => {
+            if (auditCurrentPage > 1) {
+                auditCurrentPage--;
+                loadAuditHistory();
+            }
+        });
+    }
+
+    if (auditNextPageBtn) {
+        auditNextPageBtn.addEventListener("click", () => {
+            auditCurrentPage++;
+            loadAuditHistory();
+        });
+    }
+
+    async function loadAuditHistory() {
+        auditTableBody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:20px;color:#64748b;"><i class="fa-solid fa-spinner fa-spin"></i> Fetching audit logs…</td></tr>`;
+
+        const params = new URLSearchParams({
+            financialYearId: String(financialYearId),
+            pageNumber: String(auditCurrentPage),
+            pageSize: String(auditPageSize)
+        });
+
+        if (auditFilterPr.value.trim()) params.append("prNumber", auditFilterPr.value.trim());
+        if (auditFilterFrom.value) params.append("fromDate", auditFilterFrom.value);
+        if (auditFilterTo.value) params.append("toDate", auditFilterTo.value);
+        if (auditFilterType.value) params.append("valueType", auditFilterType.value);
+
+        try {
+            const data = await getJson(`/api/cashflow/audit?${params}`);
+            renderAuditTable(data);
+        } catch (err) {
+            auditTableBody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:20px;color:#be123c;">Error: ${err.message}</td></tr>`;
+        }
+    }
+
+    function renderAuditTable(data) {
+        auditTableBody.replaceChildren();
+
+        if (!data.items || data.items.length === 0) {
+            auditTableBody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:20px;color:#64748b;">No audit records found matching criteria.</td></tr>`;
+            auditPageInfo.textContent = "Showing 0 entries";
+            auditPrevPageBtn.disabled = true;
+            auditNextPageBtn.disabled = true;
+            return;
+        }
+
+        for (const item of data.items) {
+            const tr = document.createElement("tr");
+            const dateStr = item.entryDate ? String(item.entryDate).slice(0, 10) : "";
+            const utcTime = item.modifiedAtUtc ? new Date(item.modifiedAtUtc).toLocaleString("en-GB") : "";
+
+            tr.innerHTML = `
+                <td><small>${utcTime}</small></td>
+                <td><strong>${item.prNumber}</strong></td>
+                <td>${item.categoryName}</td>
+                <td>${dateStr}</td>
+                <td><span class="section-badge">${item.valueType}</span></td>
+                <td class="num">${amount(item.oldAmount)}</td>
+                <td class="num" style="color:#059669;font-weight:700;">${amount(item.newAmount)}</td>
+                <td><small>${item.modifiedByEmail || item.modifiedByUserId}</small></td>
+                <td><small>${item.remark}</small></td>
+            `;
+            auditTableBody.appendChild(tr);
+        }
+
+        const start = (data.pageNumber - 1) * data.pageSize + 1;
+        const end   = Math.min(data.pageNumber * data.pageSize, data.totalCount);
+        auditPageInfo.textContent = `Showing ${start}–${end} of ${data.totalCount} entries`;
+
+        auditPrevPageBtn.disabled = data.pageNumber <= 1;
+        auditNextPageBtn.disabled = end >= data.totalCount;
+    }
+
+    // =========================================================
+    // LOAD STATEMENT
+    // =========================================================
+    function validateDateRange(from, to) {
+        if (!from || !to || from > to)
+            return "Choose a valid date range. From date must not be after To date.";
+        if (from < fyStartDate || to > fyEndDate)
+            return "Choose dates within financial year 2026-27 (01 Apr 2026 to 31 Mar 2027).";
+        return null;
+    }
+
+    async function loadStatement() {
+        const from = fromInput.value;
+        const to   = toInput.value;
+        const valErr = validateDateRange(from, to);
+
+        if (valErr) {
+            setStatus(valErr, "error");
+            return;
+        }
+
+        loadButton.disabled = true;
+        setStatus("Fetching statement from SQL Server…", "info");
+
+        try {
+            const summaryParameters = new URLSearchParams({
+                financialYearId: String(financialYearId),
+                asOfDate:        to,
+                valueType:       valueTypeInput.value
+            });
+
+            const gridParams = (type) => new URLSearchParams({
+                financialYearId: String(financialYearId),
+                fromDate:        from,
+                toDate:          to,
+                valueType:       type
+            });
+
+            const [actRows, projRows, summary] = await Promise.all([
+                getJson(`/api/cashflow/statement-grid?${gridParams("Actual")}`),
+                getJson(`/api/cashflow/statement-grid?${gridParams("Projected")}`),
+                getJson(`/api/cashflow/summary?${summaryParameters}`)
+            ]);
+
+            currentActualRows    = actRows;
+            currentProjectedRows = projRows;
+            currentDates         = datesBetween(from, to);
+            currentSummaryBase   = Array.isArray(summary) ? summary[0] : summary;
+
+            for (const section of statementSections) {
+                renderSection(section, actRows, projRows, currentDates);
+            }
+
+            recalculateLiveGrid();
+            updatePendingBadge();
+
+            setStatus(`Loaded ${from} → ${to} (${valueTypeInput.value}).`, "success");
+        } catch (error) {
+            console.error(error);
+            setStatus(`Unable to load data: ${error.message}`, "error");
+        } finally {
+            loadButton.disabled = false;
+        }
+    }
+
+    // =========================================================
+    // INITIALIZATION
+    // =========================================================
+    loadButton.addEventListener("click", () => {
+        if (pendingChanges.size > 0) {
+            if (!window.confirm("You have unsaved edits. Reloading will discard pending edits. Proceed?")) {
+                return;
+            }
+            pendingChanges.clear();
+        }
+        loadStatement();
+    });
+
+    valueTypeInput.addEventListener("change", () => {
+        loadStatement();
+    });
+
+    loadStatement();
+})();
+</script>

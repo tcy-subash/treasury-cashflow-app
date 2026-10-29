@@ -1,0 +1,185 @@
+@using Microsoft.AspNetCore.Identity
+@model IList<IdentityUser>
+
+@{
+    ViewData["Title"] = "User Management";
+    var userRoles = (Dictionary<string, IList<string>>)ViewBag.UserRoles;
+    var allRoles  = (List<string?>)ViewBag.AllRoles;
+}
+
+<div class="um-wrap">
+    <div class="um-header">
+        <div>
+            <h1 class="um-title">User Management</h1>
+            <p class="um-subtitle">
+                <i class="fa-solid fa-shield-halved" style="color:#fbbf24;"></i>
+                Administrator access only &mdash; <strong>@Model.Count</strong> registered users
+            </p>
+        </div>
+        <div class="um-badge">
+            <i class="fa-solid fa-users-gear"></i> Admin Console
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <p style="color:#64748b;font-size:.9rem;">No users found.</p>
+    }
+    else
+    {
+        <div class="um-table-wrap">
+            <table class="um-table" role="table" aria-label="User list">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Roles</th>
+                        <th>Email Confirmed</th>
+                        <th>Lockout</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model)
+                    {
+                        var roles = userRoles.TryGetValue(user.Id, out var r) ? r : new List<string>();
+                        <tr>
+                            <td>
+                                <span class="user-email">@user.Email</span>
+                                <span class="user-id">@user.Id[..8]…</span>
+                            </td>
+                            <td>
+                                @if (roles.Any())
+                                {
+                                    foreach (var role in roles)
+                                    {
+                                        <span class="role-pill @role.ToLower()">@role</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span style="color:#475569;font-size:.78rem;">No roles</span>
+                                }
+                            </td>
+                            <td>
+                                @if (user.EmailConfirmed)
+                                {
+                                    <span class="badge-yes"><i class="fa-solid fa-check"></i> Yes</span>
+                                }
+                                else
+                                {
+                                    <span class="badge-no"><i class="fa-solid fa-xmark"></i> No</span>
+                                }
+                            </td>
+                            <td>
+                                @if (user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow)
+                                {
+                                    <span class="badge-no">
+                                        <i class="fa-solid fa-lock"></i>
+                                        Until @user.LockoutEnd.Value.LocalDateTime.ToString("dd MMM HH:mm")
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge-yes"><i class="fa-solid fa-lock-open"></i> Active</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <div class="um-roles-section">
+        <h2 class="um-section-title">Defined Roles</h2>
+        <div class="roles-grid">
+            @foreach (var roleName in allRoles.Where(r => r != null))
+            {
+                <div class="role-card @roleName!.ToLower()">
+                    <i class="fa-solid @(
+                        roleName == "Administrator"     ? "fa-crown" :
+                        roleName == "TreasuryManager"   ? "fa-chart-pie" :
+                        roleName == "TreasuryExecutive" ? "fa-pen-to-square" :
+                        "fa-glasses")"></i>
+                    <span>@roleName</span>
+                </div>
+            }
+        </div>
+        <p class="um-note">
+            <i class="fa-solid fa-circle-info"></i>
+            Full user creation and role-assignment UI will be added in a future task.
+            Currently use the IdentitySeeder (<code>AdminSeed:Email</code> / <code>AdminSeed:Password</code>) or
+            direct database operations to add users.
+        </p>
+    </div>
+</div>
+
+<style>
+    .um-wrap { padding: 1.5rem 0; }
+    .um-header {
+        display: flex; align-items: flex-start; justify-content: space-between;
+        flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;
+    }
+    .um-title    { font-size: 1.5rem; font-weight: 800; margin: 0; }
+    .um-subtitle { font-size: .85rem; color: #94a3b8; margin: .3rem 0 0; display: flex; align-items: center; gap: .4rem; }
+    .um-badge {
+        display: flex; align-items: center; gap: .45rem;
+        padding: .45rem 1rem;
+        background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.25);
+        border-radius: 10px; font-size: .78rem; color: #fbbf24; font-weight: 600;
+    }
+
+    .um-table-wrap { overflow-x: auto; margin-bottom: 2.5rem; }
+    .um-table {
+        width: 100%; border-collapse: collapse;
+        font-size: .85rem;
+    }
+    .um-table th {
+        padding: .7rem 1rem;
+        background: rgba(255,255,255,.04);
+        border-bottom: 1px solid rgba(255,255,255,.08);
+        text-align: left;
+        font-size: .72rem; font-weight: 600; letter-spacing: .07em;
+        text-transform: uppercase; color: #64748b;
+    }
+    .um-table td {
+        padding: .85rem 1rem;
+        border-bottom: 1px solid rgba(255,255,255,.05);
+        vertical-align: middle;
+    }
+    .um-table tr:hover td { background: rgba(255,255,255,.025); }
+
+    .user-email { display: block; font-weight: 500; color: #e2e8f0; }
+    .user-id    { display: block; font-family: 'JetBrains Mono', monospace; font-size: .68rem; color: #475569; margin-top: 2px; }
+
+    .role-pill {
+        display: inline-block; margin: 2px 3px;
+        padding: .15rem .6rem;
+        border-radius: 5px; font-size: .7rem; font-weight: 600; letter-spacing: .05em;
+    }
+    .role-pill.administrator     { background:rgba(245,158,11,.15); color:#fbbf24; border:1px solid rgba(245,158,11,.3); }
+    .role-pill.treasurymanager   { background:rgba(225,29,72,.12);  color:#fb7185; border:1px solid rgba(225,29,72,.25); }
+    .role-pill.treasuryexecutive { background:rgba(2,132,199,.12);  color:#38bdf8; border:1px solid rgba(2,132,199,.25); }
+    .role-pill.auditor           { background:rgba(20,184,166,.12); color:#2dd4bf; border:1px solid rgba(20,184,166,.25); }
+
+    .badge-yes { color:#4ade80; font-size:.8rem; }
+    .badge-no  { color:#f87171; font-size:.8rem; }
+
+    .um-section-title { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: #94a3b8; }
+    .roles-grid { display: flex; flex-wrap: wrap; gap: .75rem; margin-bottom: 1.25rem; }
+    .role-card {
+        display: flex; align-items: center; gap: .55rem;
+        padding: .55rem 1rem;
+        border-radius: 10px; font-size: .82rem; font-weight: 600;
+        border: 1px solid transparent;
+    }
+    .role-card.administrator     { background:rgba(245,158,11,.1); border-color:rgba(245,158,11,.25); color:#fbbf24; }
+    .role-card.treasurymanager   { background:rgba(225,29,72,.1);  border-color:rgba(225,29,72,.22);  color:#fb7185; }
+    .role-card.treasuryexecutive { background:rgba(2,132,199,.1);  border-color:rgba(2,132,199,.22);  color:#38bdf8; }
+    .role-card.auditor           { background:rgba(20,184,166,.1); border-color:rgba(20,184,166,.22); color:#2dd4bf; }
+
+    .um-note {
+        font-size: .78rem; color: #475569;
+        display: flex; align-items: flex-start; gap: .5rem; line-height: 1.6;
+    }
+    .um-note code { background:rgba(255,255,255,.07); padding:.1rem .4rem; border-radius:4px; color:#94a3b8; }
+</style>

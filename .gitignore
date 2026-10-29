@@ -1,0 +1,92 @@
+## .NET / ASP.NET Core
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# Publish
+**/publish/
+**/PublishScripts/
+**/app_offline.htm
+
+# User secrets
+secrets.json
+
+# Environment / local settings
+appsettings.Development.json
+*.local.json
+
+# SQL Server database files
+*.mdf
+*.ldf
+*.ndf
+
+# Backup files
+*.bak
+
+# Excel / scratch files
+*.xlsx
+*.xls
+
+# Scratch PowerShell scripts (not part of the app)
+cf_formulas.ps1
+check_c67.ps1
+check_col_d.ps1
+check_daily_values.ps1
+check_misc_rows.ps1
+check_nonzero.ps1
+check_remaining_cells.ps1
+deep_cf_inspect.ps1
+direct_check.ps1
+dump_si.ps1
+find_sheet.ps1
+inspect_borrowing_formulas.ps1
+inspect_cf_details.ps1
+inspect_cf_rows.ps1
+inspect_formulas.ps1
+inspect_row67.ps1
+inspect_schema.ps1
+inspect_sections.ps1
+inspect_sheets.ps1
+query_categories.ps1
+read_rich_text.ps1
+reconcile_days.ps1
+sample_sheets.ps1
+stream_cells.ps1
+stream_row67.ps1
+verify_cashflow_rows.ps1
+verify_cashflow_top_rows.ps1
+
+# OS
+.DS_Store
+Thumbs.db
+

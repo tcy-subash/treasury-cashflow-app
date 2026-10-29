@@ -1,0 +1,437 @@
+@model DotNetMvcTest.Models.LoginViewModel
+@{
+    ViewData["Title"] = "Sign In";
+    Layout = null; // Full-page login — uses its own layout
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — CPCL Treasury</title>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --red:    #e11d48;
+            --blue:   #0284c7;
+            --indigo: #6366f1;
+            --bg:     #06090f;
+            --surface: rgba(255,255,255,0.04);
+            --border:  rgba(255,255,255,0.09);
+            --text:    #f1f5f9;
+            --muted:   #64748b;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+        }
+
+        /* ── grid lines ── */
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background-image:
+                linear-gradient(rgba(99,102,241,.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99,102,241,.05) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        canvas#bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+        .login-wrap {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        /* ── card ── */
+        .login-card {
+            width: 100%;
+            max-width: 440px;
+            background: rgba(255,255,255,0.035);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2.5rem 2.75rem;
+            backdrop-filter: blur(20px);
+            box-shadow:
+                0 0 0 1px rgba(255,255,255,.05) inset,
+                0 32px 80px rgba(0,0,0,.6),
+                0 0 60px rgba(225,29,72,.07);
+            animation: card-in .5s cubic-bezier(.22,1,.36,1) both;
+        }
+
+        @@keyframes card-in {
+            from { opacity: 0; transform: translateY(28px) scale(.97); }
+            to   { opacity: 1; transform: none; }
+        }
+
+        /* ── brand ── */
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: .85rem;
+            margin-bottom: 2rem;
+        }
+        .brand-icon {
+            width: 48px; height: 48px;
+            background: linear-gradient(135deg, var(--red), var(--blue));
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; color: #fff;
+            box-shadow: 0 4px 18px rgba(225,29,72,.35);
+            flex-shrink: 0;
+        }
+        .brand-text strong {
+            display: block;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: .05em;
+            background: linear-gradient(90deg, var(--red), var(--blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .brand-text small {
+            display: block;
+            font-size: .65rem;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        h1.login-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: .35rem;
+        }
+        .login-subtitle {
+            font-size: .82rem;
+            color: var(--muted);
+            margin-bottom: 1.75rem;
+        }
+
+        /* ── form controls ── */
+        .form-group { margin-bottom: 1.15rem; }
+
+        label.field-label {
+            display: block;
+            font-size: .75rem;
+            font-weight: 600;
+            letter-spacing: .07em;
+            text-transform: uppercase;
+            color: #94a3b8;
+            margin-bottom: .5rem;
+        }
+
+        .input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            color: var(--muted);
+            font-size: .85rem;
+            pointer-events: none;
+        }
+        .form-control-glass {
+            width: 100%;
+            padding: .7rem 1rem .7rem 2.6rem;
+            background: rgba(255,255,255,.055);
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: .9rem;
+            font-family: 'Inter', sans-serif;
+            transition: border-color .2s, box-shadow .2s;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        .form-control-glass:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(2,132,199,.18);
+        }
+        .form-control-glass::placeholder { color: #475569; }
+        .form-control-glass.input-error  { border-color: var(--red); }
+
+        .field-error {
+            font-size: .75rem;
+            color: #fb7185;
+            margin-top: .35rem;
+            display: flex;
+            align-items: center;
+            gap: .35rem;
+        }
+
+        /* ── password toggle ── */
+        .pw-toggle {
+            position: absolute;
+            right: 12px;
+            background: none;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: .85rem;
+            padding: .25rem;
+            transition: color .15s;
+        }
+        .pw-toggle:hover { color: var(--text); }
+
+        /* ── remember + forgot ── */
+        .form-row-split {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.6rem;
+        }
+        .remember-wrap {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            cursor: pointer;
+        }
+        .remember-wrap input[type=checkbox] {
+            accent-color: var(--blue);
+            width: 15px; height: 15px;
+        }
+        .remember-wrap span {
+            font-size: .8rem;
+            color: #94a3b8;
+        }
+
+        /* ── submit button ── */
+        .btn-login {
+            width: 100%;
+            padding: .8rem;
+            background: linear-gradient(135deg, var(--red) 0%, #be185d 50%, var(--blue) 100%);
+            background-size: 200% 100%;
+            background-position: left;
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: .95rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: background-position .4s, transform .15s, box-shadow .2s;
+            box-shadow: 0 4px 18px rgba(225,29,72,.3);
+        }
+        .btn-login:hover {
+            background-position: right;
+            box-shadow: 0 6px 24px rgba(2,132,199,.35);
+            transform: translateY(-1px);
+        }
+        .btn-login:active { transform: none; }
+        .btn-login:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+        /* ── alert ── */
+        .alert-glass {
+            padding: .75rem 1rem;
+            background: rgba(225,29,72,.12);
+            border: 1px solid rgba(225,29,72,.3);
+            border-radius: 10px;
+            font-size: .83rem;
+            color: #fda4af;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: flex-start;
+            gap: .5rem;
+        }
+
+        /* ── footer ── */
+        .login-footer {
+            text-align: center;
+            margin-top: 1.75rem;
+            font-size: .73rem;
+            color: var(--muted);
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: .04em;
+        }
+
+        /* ── HUD corners ── */
+        .hud { position: fixed; width: 18px; height: 18px; opacity: .4; pointer-events: none; z-index: 9; }
+        .hud.tl { top:10px; left:10px;  border-top:2px solid var(--red);  border-left:2px solid var(--red); }
+        .hud.tr { top:10px; right:10px; border-top:2px solid var(--blue); border-right:2px solid var(--blue); }
+        .hud.bl { bottom:10px; left:10px;  border-bottom:2px solid var(--red);  border-left:2px solid var(--red); }
+        .hud.br { bottom:10px; right:10px; border-bottom:2px solid var(--blue); border-right:2px solid var(--blue); }
+    </style>
+</head>
+<body>
+    <canvas id="bg" aria-hidden="true"></canvas>
+    <div class="hud tl" aria-hidden="true"></div>
+    <div class="hud tr" aria-hidden="true"></div>
+    <div class="hud bl" aria-hidden="true"></div>
+    <div class="hud br" aria-hidden="true"></div>
+
+    <div class="login-wrap">
+        <div class="login-card">
+
+            <div class="brand">
+                <div class="brand-icon" aria-hidden="true">
+                    <i class="fa-solid fa-building-columns"></i>
+                </div>
+                <div class="brand-text">
+                    <strong>CPCL</strong>
+                    <small>Treasury Application</small>
+                </div>
+            </div>
+
+            <h1 class="login-title">Welcome back</h1>
+            <p class="login-subtitle">Sign in to access the Treasury Management System</p>
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert-glass" role="alert">
+                    <i class="fa-solid fa-circle-exclamation" style="flex-shrink:0;margin-top:1px;"></i>
+                    <div>
+                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <div>@error.ErrorMessage</div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <form id="loginForm" asp-action="Login" asp-controller="Account" method="post" novalidate>
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="ReturnUrl" />
+
+                <div class="form-group">
+                    <label class="field-label" asp-for="Email">Email address</label>
+                    <div class="input-wrap">
+                        <i class="fa-regular fa-envelope input-icon"></i>
+                        <input asp-for="Email"
+                               class="form-control-glass @(ViewData.ModelState["Email"]?.Errors.Count > 0 ? "input-error" : "")"
+                               type="email"
+                               autocomplete="email"
+                               placeholder="you@cpcl.local"
+                               id="loginEmail" />
+                    </div>
+                    <span asp-validation-for="Email" class="field-error"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="field-label" asp-for="Password">Password</label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input asp-for="Password"
+                               class="form-control-glass @(ViewData.ModelState["Password"]?.Errors.Count > 0 ? "input-error" : "")"
+                               type="password"
+                               autocomplete="current-password"
+                               placeholder="••••••••••"
+                               id="loginPassword" />
+                        <button type="button" class="pw-toggle" id="pwToggle"
+                                aria-label="Toggle password visibility"
+                                title="Show or hide password">
+                            <i class="fa-regular fa-eye" id="pwIcon"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="Password" class="field-error"></span>
+                </div>
+
+                <div class="form-row-split">
+                    <label class="remember-wrap">
+                        <input asp-for="RememberMe" type="checkbox" id="rememberMe" />
+                        <span>Remember me for 8 hours</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-login" id="submitBtn">
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i>&nbsp; Sign In
+                </button>
+            </form>
+
+            <div class="login-footer">
+                CPCL Treasury &bull; v2.0 &bull; Secure Access
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ── Password toggle
+        document.getElementById('pwToggle')?.addEventListener('click', () => {
+            const pw   = document.getElementById('loginPassword');
+            const icon = document.getElementById('pwIcon');
+            const show = pw.type === 'password';
+            pw.type  = show ? 'text' : 'password';
+            icon.className = show ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+        });
+
+        // ── Disable button on submit to prevent double-submit
+        document.getElementById('loginForm')?.addEventListener('submit', () => {
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>&nbsp; Signing in…';
+        });
+
+        // ── Particle canvas
+        (() => {
+            const canvas = document.getElementById('bg');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+            resize();
+            window.addEventListener('resize', resize);
+            const N = 30;
+            const pts = Array.from({ length: N }, () => ({
+                x: Math.random() * innerWidth,
+                y: Math.random() * innerHeight,
+                r: Math.random() * 1.4 + 0.3,
+                vx: (Math.random() - .5) * .3,
+                vy: (Math.random() - .5) * .3,
+                hue: Math.random() > .5 ? '225,29,72' : '2,132,199',
+                a: Math.random() * .3 + .1
+            }));
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                for (let i = 0; i < N; i++) {
+                    for (let j = i + 1; j < N; j++) {
+                        const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y;
+                        const d = Math.sqrt(dx*dx+dy*dy);
+                        if (d < 120) {
+                            ctx.beginPath();
+                            ctx.moveTo(pts[i].x, pts[i].y);
+                            ctx.lineTo(pts[j].x, pts[j].y);
+                            ctx.strokeStyle = `rgba(${pts[i].hue},${(1-d/120)*.07})`;
+                            ctx.lineWidth = .5;
+                            ctx.stroke();
+                        }
+                    }
+                }
+                for (const p of pts) {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+                    ctx.fillStyle = `rgba(${p.hue},${p.a})`;
+                    ctx.fill();
+                    p.x += p.vx; p.y += p.vy;
+                    if (p.x < 0) p.x = canvas.width;  if (p.x > canvas.width)  p.x = 0;
+                    if (p.y < 0) p.y = canvas.height; if (p.y > canvas.height) p.y = 0;
+                }
+                requestAnimationFrame(draw);
+            }
+            draw();
+        })();
+    </script>
+</body>
+</html>

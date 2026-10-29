@@ -1,0 +1,467 @@
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - CPCL Treasury</title>
+
+    <script type="importmap"></script>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/DotNetMvcTest.styles.css" asp-append-version="true" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900&family=JetBrains+Mono:wght@400;500;600&display=swap"
+          rel="stylesheet" />
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+
+    <style>
+        /* ── GLOBAL CLOCK / TICKER ─────────────────────────────── */
+        #live-clock {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: #0284c7;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        /* ── PARTICLES CANVAS ──────────────────────────────────── */
+        #particle-canvas {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Stacking order: header > nav card > main > canvas */
+        .glass-header         { position: relative; z-index: 100; }
+        .page-navigation-card { position: relative; z-index: 10;  }
+        .app-main             { position: relative; z-index: 1;   }
+
+        /* ── GRID LINES BACKGROUND ─────────────────────────────── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(99, 102, 241, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.04) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── TOP BORDER GLOW ───────────────────────────────────── */
+        .glass-header::before {
+            content: '';
+            position: absolute;
+            top: 14px;
+            left: 24px;
+            right: 24px;
+            height: 2px;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                rgba(225, 29, 72, 0.6) 30%,
+                rgba(2, 132, 199, 0.6) 70%,
+                transparent 100%
+            );
+            border-radius: 99px;
+            animation: header-glow 4s ease-in-out infinite alternate;
+        }
+
+        @@keyframes header-glow {
+            0%   { opacity: 0.5; transform: scaleX(0.85); }
+            100% { opacity: 1;   transform: scaleX(1); }
+        }
+
+        /* ── HUD CORNER MARKS ──────────────────────────────────── */
+        .hud-corner {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            opacity: 0.45;
+            pointer-events: none;
+            z-index: 9998;
+        }
+        .hud-corner.tl { top: 12px; left: 12px; border-top: 2px solid #e11d48; border-left: 2px solid #e11d48; }
+        .hud-corner.tr { top: 12px; right: 12px; border-top: 2px solid #0284c7; border-right: 2px solid #0284c7; }
+        .hud-corner.bl { bottom: 12px; left: 12px; border-bottom: 2px solid #e11d48; border-left: 2px solid #e11d48; }
+        .hud-corner.br { bottom: 12px; right: 12px; border-bottom: 2px solid #0284c7; border-right: 2px solid #0284c7; }
+
+        /* ── USER MENU ─────────────────────────────────────────── */
+        .user-menu-wrap { position: relative; }
+        .user-dropdown {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            min-width: 200px;
+            background: rgba(10,15,25,.95);
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 12px;
+            padding: .5rem;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 16px 40px rgba(0,0,0,.6);
+            z-index: 9999;
+            display: none;
+            animation: drop-in .18s ease both;
+        }
+        .user-menu-wrap:hover .user-dropdown,
+        .user-menu-wrap:focus-within .user-dropdown { display: block; }
+
+        @@keyframes drop-in {
+            from { opacity:0; transform:translateY(-6px); }
+            to   { opacity:1; transform:none; }
+        }
+
+        .user-info {
+            padding: .6rem .85rem .5rem;
+            border-bottom: 1px solid rgba(255,255,255,.07);
+            margin-bottom: .35rem;
+        }
+        .user-info-email { font-size: .75rem; color: #e2e8f0; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .user-info-role  { font-size: .68rem; color: #64748b; margin-top: 2px; }
+
+        .dropdown-item-link {
+            display: flex; align-items: center; gap: .55rem;
+            padding: .5rem .85rem;
+            border-radius: 8px;
+            color: #94a3b8;
+            font-size: .82rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: background .15s, color .15s;
+        }
+        .dropdown-item-link:hover { background: rgba(255,255,255,.07); color: #e2e8f0; }
+        .dropdown-item-link.danger:hover { background: rgba(225,29,72,.12); color: #fb7185; }
+
+        .logout-form { margin: 0; }
+        .logout-btn {
+            width: 100%;
+            background: none;
+            border: none;
+            cursor: pointer;
+            display: flex; align-items: center; gap: .55rem;
+            padding: .5rem .85rem;
+            border-radius: 8px;
+            color: #94a3b8;
+            font-size: .82rem;
+            font-weight: 500;
+            font-family: inherit;
+            transition: background .15s, color .15s;
+            text-align: left;
+        }
+        .logout-btn:hover { background: rgba(225,29,72,.12); color: #fb7185; }
+    </style>
+</head>
+
+<body class="app-body">
+
+    <!-- Canvas for particle animation -->
+    <canvas id="particle-canvas" aria-hidden="true"></canvas>
+
+    <!-- HUD corner decorations -->
+    <div class="hud-corner tl" aria-hidden="true"></div>
+    <div class="hud-corner tr" aria-hidden="true"></div>
+    <div class="hud-corner bl" aria-hidden="true"></div>
+    <div class="hud-corner br" aria-hidden="true"></div>
+
+    @{
+        var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+        var currentAction     = ViewContext.RouteData.Values["action"]?.ToString();
+
+        var isDashboard    = currentController == "Dashboard";
+        var isCashFlow     = currentController == "CashFlowPage";
+        var isBorrowings   = currentController == "Borrowings";
+        var isInvestments  = currentController == "Investments";
+        var isReconcile    = currentController == "Reconciliation";
+        var isUserMgmt     = currentController == "UserManagement";
+
+        var isLoggedIn = SignInManager.IsSignedIn(User);
+        var currentUser = isLoggedIn ? UserManager.GetUserName(User) : null;
+        var isAdmin = User.IsInRole("Administrator");
+        var userInitial = currentUser?.Length > 0 ? currentUser[0].ToString().ToUpper() : "?";
+
+        // Role label for the dropdown
+        string roleLabel = User.IsInRole("Administrator")     ? "Administrator"
+                         : User.IsInRole("TreasuryManager")   ? "Treasury Manager"
+                         : User.IsInRole("TreasuryExecutive") ? "Treasury Executive"
+                         : User.IsInRole("Auditor")           ? "Auditor"
+                         : "User";
+    }
+
+<header class="glass-header">
+    <nav class="glass-navbar" aria-label="CPCL header">
+
+        <a class="brand-block"
+           asp-controller="Dashboard"
+           asp-action="Index"
+           aria-label="CPCL Home">
+            <span class="brand-icon">
+                <i class="fa-solid fa-building-columns"></i>
+            </span>
+            <span class="brand-text">
+                <strong>CPCL</strong>
+                <small>Treasury Application</small>
+            </span>
+        </a>
+
+        <div class="nav-actions">
+            <!-- Live Clock -->
+            <span id="live-clock" aria-live="off" aria-label="Current time"></span>
+
+            <div class="financial-year">
+                <span class="status-dot"></span>
+                <span>FY 2026–27</span>
+            </div>
+
+            <div class="nav-divider"></div>
+
+            <button type="button"
+                    class="nav-icon-button"
+                    id="themeToggle"
+                    aria-label="Toggle light and dark appearance"
+                    title="Toggle appearance">
+                <i class="fa-regular fa-moon"></i>
+            </button>
+
+            @if (isLoggedIn)
+            {
+                <!-- User profile chip with dropdown -->
+                <div class="user-menu-wrap" id="userMenuWrap">
+                    <button type="button"
+                            class="profile-chip"
+                            id="userMenuBtn"
+                            aria-haspopup="true"
+                            aria-expanded="false"
+                            title="User menu">
+                        <span class="profile-avatar">@userInitial</span>
+                        <span class="profile-label">
+                            <strong>@(currentUser?.Split('@')[0])</strong>
+                            <small>@roleLabel</small>
+                        </span>
+                        <i class="fa-solid fa-chevron-down" style="font-size:.6rem;color:#64748b;margin-left:.25rem;"></i>
+                    </button>
+
+                    <div class="user-dropdown" role="menu" id="userDropdown">
+                        <div class="user-info">
+                            <div class="user-info-email">@currentUser</div>
+                            <div class="user-info-role">@roleLabel</div>
+                        </div>
+                        @if (isAdmin)
+                        {
+                            <a class="dropdown-item-link"
+                               asp-controller="UserManagement"
+                               asp-action="Index"
+                               role="menuitem">
+                                <i class="fa-solid fa-users-gear"></i> User Management
+                            </a>
+                        }
+                        <form asp-action="Logout" asp-controller="Account" method="post" class="logout-form">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="logout-btn" role="menuitem">
+                                <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <a class="profile-chip"
+                   asp-controller="Account"
+                   asp-action="Login"
+                   style="text-decoration:none;">
+                    <span class="profile-avatar">?</span>
+                    <span class="profile-label">
+                        <strong>Sign In</strong>
+                        <small>Not logged in</small>
+                    </span>
+                </a>
+            }
+        </div>
+    </nav>
+</header>
+
+
+
+<nav class="page-navigation-card" aria-label="Page navigation">
+    <div class="nav-links">
+        <a class="glass-nav-link @(isDashboard ? "active" : "")"
+           asp-controller="Dashboard" asp-action="Index">
+            <i class="fa-solid fa-chart-pie"></i>
+            <span>Dashboard</span>
+        </a>
+
+        @if (isLoggedIn)
+        {
+            <a class="glass-nav-link @(isCashFlow ? "active" : "")"
+               asp-controller="CashFlowPage" asp-action="Index">
+                <i class="fa-solid fa-money-bill-transfer"></i>
+                <span>Cash Flow</span>
+            </a>
+
+            <a class="glass-nav-link @(isBorrowings ? "active" : "")"
+               asp-controller="Borrowings" asp-action="Index">
+                <i class="fa-solid fa-landmark"></i>
+                <span>Borrowings</span>
+            </a>
+
+            <a class="glass-nav-link @(isInvestments ? "active" : "")"
+               asp-controller="Investments" asp-action="Index">
+                <i class="fa-solid fa-arrow-trend-up"></i>
+                <span>Investments</span>
+            </a>
+
+            <a class="glass-nav-link @(isReconcile ? "active" : "")"
+               asp-controller="Reconciliation" asp-action="Index">
+                <i class="fa-solid fa-scale-balanced"></i>
+                <span>Reconciliation</span>
+            </a>
+
+            @if (isAdmin)
+            {
+                <a class="glass-nav-link @(isUserMgmt ? "active" : "")"
+                   asp-controller="UserManagement" asp-action="Index">
+                    <i class="fa-solid fa-users-gear"></i>
+                    <span>Users</span>
+                </a>
+            }
+        }
+    </div>
+</nav>
+
+
+
+<main role="main" class="app-main">
+    @RenderBody()
+</main>
+
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <script>
+        (() => {
+            // ── THEME TOGGLE ─────────────────────────────────────
+            const themeToggle = document.getElementById("themeToggle");
+
+            themeToggle?.addEventListener("click", () => {
+                const isDark = document.body.classList.toggle("dark-theme");
+
+                themeToggle.innerHTML = isDark
+                    ? '<i class="fa-solid fa-sun"></i>'
+                    : '<i class="fa-regular fa-moon"></i>';
+
+                themeToggle.setAttribute(
+                    "aria-label",
+                    isDark ? "Switch to light appearance" : "Switch to dark appearance"
+                );
+            });
+
+            // ── LIVE CLOCK ───────────────────────────────────────
+            const clockEl = document.getElementById("live-clock");
+            function updateClock() {
+                if (!clockEl) return;
+                const now = new Date();
+                clockEl.textContent = now.toLocaleTimeString("en-IN", {
+                    hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false
+                });
+            }
+            updateClock();
+            setInterval(updateClock, 1000);
+
+            // ── USER MENU TOGGLE (click) ─────────────────────────
+            const userMenuBtn = document.getElementById("userMenuBtn");
+            const userDropdown = document.getElementById("userDropdown");
+            if (userMenuBtn && userDropdown) {
+                userMenuBtn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const isOpen = userDropdown.style.display === "block";
+                    userDropdown.style.display = isOpen ? "none" : "block";
+                    userMenuBtn.setAttribute("aria-expanded", String(!isOpen));
+                });
+                document.addEventListener("click", () => {
+                    userDropdown.style.display = "none";
+                    userMenuBtn.setAttribute("aria-expanded", "false");
+                });
+            }
+
+            // ── PARTICLE CANVAS ──────────────────────────────────
+            const canvas = document.getElementById("particle-canvas");
+            if (!canvas) return;
+            const ctx = canvas.getContext("2d");
+
+            function resize() {
+                canvas.width  = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            resize();
+            window.addEventListener("resize", resize);
+
+            const PARTICLE_COUNT = 45;
+            const particles = Array.from({ length: PARTICLE_COUNT }, () => ({
+                x:    Math.random() * canvas.width,
+                y:    Math.random() * canvas.height,
+                r:    Math.random() * 1.5 + 0.4,
+                vx:   (Math.random() - 0.5) * 0.35,
+                vy:   (Math.random() - 0.5) * 0.35,
+                hue:  Math.random() > 0.5 ? "225,29,72" : "2,132,199",
+                alpha: Math.random() * 0.35 + 0.15
+            }));
+
+            function drawParticles() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Draw connection lines
+                for (let i = 0; i < particles.length; i++) {
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < 130) {
+                            const opacity = (1 - dist / 130) * 0.08;
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(${particles[i].hue},${opacity})`;
+                            ctx.lineWidth = 0.6;
+                            ctx.stroke();
+                        }
+                    }
+                }
+
+                // Draw particles
+                for (const p of particles) {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(${p.hue},${p.alpha})`;
+                    ctx.fill();
+
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    if (p.x < 0) p.x = canvas.width;
+                    if (p.x > canvas.width) p.x = 0;
+                    if (p.y < 0) p.y = canvas.height;
+                    if (p.y > canvas.height) p.y = 0;
+                }
+
+                requestAnimationFrame(drawParticles);
+            }
+
+            drawParticles();
+        })();
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+</body>
+</html>

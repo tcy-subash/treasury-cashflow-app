@@ -1,0 +1,206 @@
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+
+@{
+    ViewData["Title"] = "Executive Dashboard";
+    var userName = UserManager.GetUserName(User) ?? "User";
+    var isAdmin  = User.IsInRole("Administrator");
+    var isMgr    = User.IsInRole("TreasuryManager");
+    var isExec   = User.IsInRole("TreasuryExecutive");
+    var isAudit  = User.IsInRole("Auditor");
+
+    string roleLabel = isAdmin  ? "Administrator"
+                     : isMgr   ? "Treasury Manager"
+                     : isExec  ? "Treasury Executive"
+                     : isAudit ? "Auditor"
+                     : "User";
+}
+
+<div class="dash-wrap">
+
+    <!-- ── GREETING ── -->
+    <div class="dash-greeting">
+        <div>
+            <h1 class="dash-title">Executive Dashboard</h1>
+            <p class="dash-subtitle">
+                Welcome, <strong>@userName</strong> &mdash;
+                <span class="role-badge">@roleLabel</span>
+            </p>
+        </div>
+        <div class="dash-fy-badge">
+            <i class="fa-solid fa-calendar-days"></i> FY 2026–27
+        </div>
+    </div>
+
+    <!-- ── STATUS CARDS ── -->
+    <div class="dash-cards">
+
+        @if (isAdmin || isMgr || isExec || isAudit)
+        {
+            <a class="stat-card active-card" asp-controller="CashFlowPage" asp-action="Index">
+                <div class="stat-icon red">
+                    <i class="fa-solid fa-money-bill-transfer"></i>
+                </div>
+                <div class="stat-body">
+                    <div class="stat-label">Cash Flow</div>
+                    <div class="stat-value">Live</div>
+                    <div class="stat-sub">Statement &amp; Summary</div>
+                </div>
+                <i class="fa-solid fa-arrow-right stat-arrow"></i>
+            </a>
+        }
+
+        <div class="stat-card coming">
+            <div class="stat-icon blue">
+                <i class="fa-solid fa-landmark"></i>
+            </div>
+            <div class="stat-body">
+                <div class="stat-label">Borrowings &amp; Facilities</div>
+                <div class="stat-value coming-tag">Coming soon</div>
+                <div class="stat-sub">Loan management module</div>
+            </div>
+        </div>
+
+        <div class="stat-card coming">
+            <div class="stat-icon indigo">
+                <i class="fa-solid fa-arrow-trend-up"></i>
+            </div>
+            <div class="stat-body">
+                <div class="stat-label">Investments &amp; Repayments</div>
+                <div class="stat-value coming-tag">Coming soon</div>
+                <div class="stat-sub">Portfolio &amp; repayment tracking</div>
+            </div>
+        </div>
+
+        <div class="stat-card coming">
+            <div class="stat-icon teal">
+                <i class="fa-solid fa-scale-balanced"></i>
+            </div>
+            <div class="stat-body">
+                <div class="stat-label">Reconciliation</div>
+                <div class="stat-value coming-tag">Coming soon</div>
+                <div class="stat-sub">Bank &amp; ledger reconciliation</div>
+            </div>
+        </div>
+
+        @if (isAdmin)
+        {
+            <a class="stat-card active-card" asp-controller="UserManagement" asp-action="Index">
+                <div class="stat-icon amber">
+                    <i class="fa-solid fa-users-gear"></i>
+                </div>
+                <div class="stat-body">
+                    <div class="stat-label">User Management</div>
+                    <div class="stat-value">Admin</div>
+                    <div class="stat-sub">Roles &amp; access control</div>
+                </div>
+                <i class="fa-solid fa-arrow-right stat-arrow"></i>
+            </a>
+        }
+
+    </div>
+
+    <!-- ── INFO ── -->
+    <p class="dash-note">
+        <i class="fa-solid fa-circle-info"></i>
+        Modules marked <em>Coming soon</em> are planned for future releases.
+        Your role (<strong>@roleLabel</strong>) controls which sections you can access.
+    </p>
+
+</div>
+
+<style>
+    .dash-wrap   { padding: 2rem 0; }
+    .dash-greeting {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 2.25rem;
+    }
+    .dash-title  { font-size: 1.6rem; font-weight: 800; margin: 0; }
+    .dash-subtitle { font-size: .9rem; color: #94a3b8; margin: .3rem 0 0; }
+    .role-badge {
+        display: inline-block;
+        padding: .15rem .55rem;
+        background: rgba(2,132,199,.15);
+        border: 1px solid rgba(2,132,199,.3);
+        border-radius: 6px;
+        color: #38bdf8;
+        font-size: .72rem;
+        font-weight: 600;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+    }
+    .dash-fy-badge {
+        display: flex; align-items: center; gap: .45rem;
+        padding: .45rem 1rem;
+        background: rgba(99,102,241,.12);
+        border: 1px solid rgba(99,102,241,.25);
+        border-radius: 10px;
+        font-size: .8rem;
+        color: #a5b4fc;
+        font-weight: 600;
+    }
+
+    .dash-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 1.25rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: rgba(255,255,255,.04);
+        border: 1px solid rgba(255,255,255,.08);
+        border-radius: 16px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1.1rem;
+        text-decoration: none;
+        color: inherit;
+        transition: background .2s, border-color .2s, transform .15s;
+        position: relative;
+    }
+    .stat-card.active-card:hover {
+        background: rgba(255,255,255,.07);
+        border-color: rgba(255,255,255,.16);
+        transform: translateY(-2px);
+        cursor: pointer;
+    }
+    .stat-card.coming { opacity: .65; cursor: default; }
+
+    .stat-icon {
+        width: 48px; height: 48px;
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+    .stat-icon.red    { background: rgba(225,29,72,.15); color: #fb7185; }
+    .stat-icon.blue   { background: rgba(2,132,199,.15); color: #38bdf8; }
+    .stat-icon.indigo { background: rgba(99,102,241,.15); color: #a5b4fc; }
+    .stat-icon.teal   { background: rgba(20,184,166,.15); color: #2dd4bf; }
+    .stat-icon.amber  { background: rgba(245,158,11,.15); color: #fbbf24; }
+
+    .stat-body { flex: 1; min-width: 0; }
+    .stat-label { font-size: .78rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: .07em; }
+    .stat-value { font-size: 1.1rem; font-weight: 700; margin: .2rem 0 .1rem; }
+    .stat-value.coming-tag { font-size: .8rem; color: #475569; font-weight: 500; font-style: italic; }
+    .stat-sub   { font-size: .75rem; color: #475569; }
+    .stat-arrow { color: #334155; font-size: .85rem; transition: color .2s; }
+    .stat-card.active-card:hover .stat-arrow { color: #94a3b8; }
+
+    .dash-note {
+        font-size: .8rem;
+        color: #475569;
+        display: flex;
+        align-items: flex-start;
+        gap: .5rem;
+        line-height: 1.6;
+    }
+    .dash-note i { color: #334155; margin-top: 2px; }
+</style>
